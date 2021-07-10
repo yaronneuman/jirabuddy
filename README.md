@@ -1,0 +1,2 @@
+# jirabuddy
+Slackbot for jira
