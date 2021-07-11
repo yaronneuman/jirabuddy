@@ -130,3 +130,8 @@ dmypy.json
 
 # pycharm
 .idea/
+
+#development files
+ca-bundle.pem
+config.yaml
+colo_plugins.py
