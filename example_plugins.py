@@ -17,6 +17,6 @@ def plus(msg, first: str, second: str):
 
 
 @respond_to("Nice to meet you, I'm (.*)$")
-def self_into(msg, who):
+def self_intro(msg, who):
     """Say hi to the bot"""
     msg.reply(f"Hey {who}, it's a pleasure to meet you. I'm Colo, at your service!")
