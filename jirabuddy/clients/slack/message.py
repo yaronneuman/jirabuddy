@@ -57,7 +57,9 @@ class MessageDispatcherWrapper(MessageDispatcher):
             if func:
                 responded = True
                 try:
-                    func(MessageWrapper(self._client, msg), *args, **self._registered_keywords)
+                    relevant_keywords = {k: v for k, v in self._registered_keywords.items() if
+                                         k in func.__code__.co_varnames}
+                    func(MessageWrapper(self._client, msg), *args, **relevant_keywords)
                 except Exception as ex:
                     logger.exception('failed to handle message %s with plugin "%s"', text, func.__name__)
                     reply = '[%s] I have problem when handling "%s"\n' % (func.__name__, text)
