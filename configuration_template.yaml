@@ -1,0 +1,24 @@
+application:
+  title: JiraBuddy
+  description: SlackBot for jira
+  version: v0.1.0
+
+
+jira:
+  # Contains a certificate authority bundle to verify the server certificate
+  ca_bundle: ""
+  # Should an issue be unassigned, assign to this username
+  server: ""
+  # The Jira authentication username
+  username: ""
+  # The Jira authentication password
+  password: ""
+  # Default Jira project to use
+  default_project: ""
+
+slack:
+  # The slack application token
+  token: ""
+
+bot:
+  plugins_path: ""
