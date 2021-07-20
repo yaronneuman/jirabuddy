@@ -1,10 +1,13 @@
 import re
+import time
 import traceback
 
 from six import iteritems
 from slackbot import dispatcher
 from slackbot.utils import to_utf8
 from slackbot.dispatcher import MessageDispatcher, logger, Message
+
+from .errors import Shutdown
 
 dispatcher.AT_MESSAGE_MATCHER = re.compile(r'^\<@(\w+)\>:? (.*)$', re.S)
 
@@ -15,6 +18,7 @@ class MessageDispatcherWrapper(MessageDispatcher):
         debug = kwargs.pop("debug", False)
         super(MessageDispatcherWrapper, self).__init__(*args, **kwargs)
         self.debug: bool = debug
+        self.shutdown = False
 
     def _get_plugins_help(self, verbose: bool = True) -> str:
         helps = [u"You can ask me one of the following questions:"]
@@ -38,6 +42,23 @@ class MessageDispatcherWrapper(MessageDispatcher):
     def _default_reply(self, msg) -> None:
         self._client.rtm_send_message(msg['channel'], self._get_default_answer(msg))
 
+    def loop(self):
+        while True and not self.shutdown:
+            events = self._client.rtm_read()
+            for event in events:
+                event_type = event.get('type')
+                if event_type == 'message':
+                    self._on_new_message(event)
+                elif event_type in ['channel_created', 'channel_rename',
+                                    'group_joined', 'group_rename',
+                                    'im_created']:
+                    channel = [event['channel']]
+                    self._client.parse_channel_data(channel)
+                elif event_type in ['team_join', 'user_change']:
+                    user = [event['user']]
+                    self._client.parse_user_data(user)
+            time.sleep(1)
+
     def dispatch_msg(self, msg) -> None:
         category = msg[0]
         msg = msg[1]
@@ -60,6 +81,8 @@ class MessageDispatcherWrapper(MessageDispatcher):
                     relevant_keywords = {k: v for k, v in self._registered_keywords.items() if
                                          k in func.__code__.co_varnames}
                     func(MessageWrapper(self._client, msg), *args, **relevant_keywords)
+                except Shutdown:
+                    self.shutdown = True
                 except Exception as ex:
                     logger.exception('failed to handle message %s with plugin "%s"', text, func.__name__)
                     reply = '[%s] I have problem when handling "%s"\n' % (func.__name__, text)

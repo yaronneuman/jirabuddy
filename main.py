@@ -1,6 +1,7 @@
 import confuse
 
-from jirabuddy.clients import JiraClient, SlackBot
+from jirabuddy.clients import JiraClient
+from jirabuddy.bot import SlackBot
 from jirabuddy.common import enum
 
 
