@@ -65,6 +65,10 @@ class JiraClient(jira.client.JIRA):
         self._current_ticket = Ticket(client=self, key=key, **kwargs)
 
     def get_ticket(self, key: str = None, **kwargs) -> Ticket:
+        if ("http://" in key or "https://" in key) and r"/browse/" in key:
+            key = key.split(r"/")[-1]
+            if "|" in key:
+                key = key.split("|")[0]
         return Ticket(client=self, key=key, **kwargs) if key else self._current_ticket
 
     def search_tickets(self, jql: str, fields=None, *args, **kwargs):

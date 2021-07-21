@@ -62,7 +62,7 @@ class MessageDispatcherWrapper(MessageDispatcher):
     def dispatch_msg(self, msg) -> None:
         category = msg[0]
         msg = msg[1]
-        text = msg['text']
+        text = msg['text'].replace(" ", " ")
 
         if (not self.debug and text.startswith("test|")) or (self.debug and not text.startswith("test|")):
             return
