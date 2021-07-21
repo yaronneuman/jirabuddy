@@ -11,6 +11,7 @@ class SlackBot(Bot):
         slackbot.bot.settings.PLUGINS = []
         super(SlackBot, self).__init__()
         self._dispatcher = MessageDispatcherWrapper(self._client, self._plugins, "test-colo", debug=debug)
+        self.register("slack_users", self._client.get_user)
 
     def register(self, keyword: str, value):
         self._dispatcher.register(keyword, value)

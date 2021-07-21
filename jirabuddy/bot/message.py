@@ -29,7 +29,7 @@ class MessageDispatcherWrapper(MessageDispatcher):
         return '\n'.join(to_utf8(helps))
 
     def _help_reply(self, msg) -> None:
-        default_reply = u"Hi there, I'm %s." % self._client.login_data['self']['name']
+        default_reply = u"Hey there, I'm %s." % self._client.login_data['self']['name']
         txt = '\n'.join(to_utf8([default_reply, self._get_plugins_help()]))
         self._client.rtm_send_message(msg['channel'], txt)
 
