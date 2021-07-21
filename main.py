@@ -1,3 +1,5 @@
+import os
+
 import confuse
 
 from jirabuddy.clients import JiraClient
@@ -22,7 +24,7 @@ def main():
                              config.jira.password,
                              project=config.jira.default_project)
 
-    slackbot = SlackBot(config.slack.token)
+    slackbot = SlackBot(config.slack.token, debug=bool(int(os.environ.get("DEBUG", 0))))
     slackbot.register("jira", jira_client)
 
     init_slackbot_plugins(config)
