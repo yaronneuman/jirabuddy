@@ -24,7 +24,8 @@ class MessageDispatcherWrapper(MessageDispatcher):
         helps = [u"You can ask me one of the following questions:"]
         for p, v in sorted(iteritems(self._plugins.commands['respond_to']), key=lambda x: x[0].pattern):
             doc = "\n```%s```\n" % v.__doc__ if verbose and v.__doc__ else ""
-            pattern = p.pattern if not v.__doc__ else re.findall(".*?Command: (.*?)\n", v.__doc__, re.MULTILINE)[0]
+            custom_docs = re.findall(".*?Command: (.*?)(\n|$)", v.__doc__, re.MULTILINE) if v.__doc__ else ""
+            pattern = custom_docs[0][0].strip() if custom_docs else p.pattern
             helps += [u' \u2022 {0}{1}'.format("`%s`" % pattern, doc)]
         return '\n'.join(to_utf8(helps))
 
