@@ -1,6 +1,7 @@
 import re
 import time
 import traceback
+from typing import Dict
 
 from six import iteritems
 from slackbot import dispatcher
@@ -13,12 +14,12 @@ dispatcher.AT_MESSAGE_MATCHER = re.compile(r'^\<@(\w+)\>:? (.*)$', re.S)
 
 
 class MessageDispatcherWrapper(MessageDispatcher):
-    def __init__(self, *args, **kwargs):
-        self._registered_keywords = {}
-        debug = kwargs.pop("debug", False)
-        super(MessageDispatcherWrapper, self).__init__(*args, **kwargs)
+    def __init__(self, slackclient, plugins, errors_channel: str, plugins_cache: [Dict, None], debug: bool = False):
+        super(MessageDispatcherWrapper, self).__init__(slackclient, plugins, errors_channel)
+        self._registered_keywords: dict = {}
+        self._plugins_cache: dict = plugins_cache or {}
         self.debug: bool = debug
-        self.shutdown = False
+        self.shutdown: bool = False
 
     def _get_plugins_help(self, verbose: bool = True) -> str:
         helps = [u"You can ask me one of the following questions:"]
@@ -81,7 +82,12 @@ class MessageDispatcherWrapper(MessageDispatcher):
                 try:
                     relevant_keywords = {k: v for k, v in self._registered_keywords.items() if
                                          k in func.__code__.co_varnames}
-                    func(MessageWrapper(self._client, msg), *args, **relevant_keywords)
+
+                    plugin_id = func.__code__.__str__()
+                    if plugin_id not in self._plugins_cache:
+                        self._plugins_cache[plugin_id] = {}
+
+                    func(MessageWrapper(self._client, msg, func.__name__, self._plugins_cache.get(plugin_id)), *args, **relevant_keywords)
                 except Shutdown:
                     self.shutdown = True
                 except Exception as ex:
@@ -101,8 +107,10 @@ class MessageDispatcherWrapper(MessageDispatcher):
 
 
 class MessageWrapper(Message):
-    def __init__(self, *args, **kwargs):
-        super(MessageWrapper, self).__init__(*args, **kwargs)
+    def __init__(self, slack_client, body, plugin_name: str, plugin_cache: dict):
+        super(MessageWrapper, self).__init__(slack_client, body)
+        self._plugin_name = plugin_name
+        self._plugin_cache = plugin_cache
 
     @property
     def sender(self):
@@ -119,3 +127,11 @@ class MessageWrapper(Message):
             self._client.upload_file(self._body['channel'], attachment_name or attachment_path, attachment_path, text)
         else:
             self.send(text)
+
+    def store(self, store_dict: dict):
+        self._plugin_cache.update(**store_dict)
+
+    def restore(self, key: [str, None] = None):
+        if key is None:
+            return self._plugin_cache.copy()
+        return self._plugin_cache.get(key, None)
