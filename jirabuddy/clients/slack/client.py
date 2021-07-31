@@ -10,7 +10,7 @@ class SlackClient(Slacker):
         self.alerts_channel = alerts_channel
         self.username = user_name
         self.token = token
-        super(SlackClient, self).__init__(self.token)
+        super().__init__(self.token)
 
     def channels_by_name(self):
         return {c['name']: c['id'] for c in self.channels.list().body['channels']}

@@ -15,13 +15,12 @@ JIRA_SERVER_ERRORS_TO_RETRY = (500, 504)
 
 
 class JiraClient(jira.client.JIRA):
-    def __init__(self, server: str, username: str, password: str, *args, **kwargs):
-        self._current_project: [str, None] = kwargs.pop("project", None)
-        self._current_project: [str, None] = kwargs.pop("project", None)
-        super(JiraClient, self).__init__(basic_auth=(username, password),
-                                         options={"server": server,
-                                                  "verify": kwargs.pop("ca_bundle", True)},
-                                         *args, **kwargs)
+    def __init__(self, server: str, username: str, password: str, lazy: bool = False, *args, **kwargs):
+        self._current_project: [str, None] = kwargs.pop("default_project", None)
+        super().__init__(basic_auth=(username, password),
+                         options={"server": server,
+                                  "verify": kwargs.pop("ca_bundle", True)},
+                         *args, **kwargs)
         self.server: str = server
         self._session.cookies = ObliviousCookieJar()
         self._current_user: str = username
@@ -36,27 +35,30 @@ class JiraClient(jira.client.JIRA):
         self.Statuses = None
         self.EpicLinks = None
 
-        if not kwargs.get("skip_load", False):
+        if not lazy:
             self.load()
 
     def load(self):
-        self.TicketTypes = to_enumable("TicketTypes", "name", "name", self.issue_types())
-        self.Priorities = to_enumable("Priority", "name", "name", self.priorities())
-        self.Projects = to_enumable("Projects", "name", "key", self.projects())
-        self.FieldsByName = to_enumable("Fields", "name", "id", self.fields())
-        self.FieldsByKey = to_enumable("Fields", "id", "name", self.fields(), clean_values=True)
-        self.Statuses = to_enumable("Statuses", "name", "id", self.statuses())
-        self.EpicLinks = to_enumable("EpicLinks", "key", "name",
-                                     [{"key": t.key, "name": t.fields.customfield_10501}
-                                      for t in self.search_issues("issuetype = Epic",
-                                                                  fields="customfield_10501")],
-                                     reverse_mapping=True)
-        if self._current_project:
-            self.FixVersions = to_enumable("FixVersions", "name", "name",
-                                           self.project_versions(self._current_project))
+        if not self.TicketTypes:
+            self.TicketTypes = to_enumable("TicketTypes", "name", "name", self.issue_types())
+        if not self.Priorities:
+            self.Priorities = to_enumable("Priority", "name", "name", self.priorities())
+        if not self.Projects:
+            self.Projects = to_enumable("Projects", "name", "key", self.projects())
+        if not self.FieldsByName:
+            self.FieldsByName = to_enumable("Fields", "name", "id", self.fields())
+        if not self.FieldsByKey:
+            self.FieldsByKey = to_enumable("Fields", "id", "name", self.fields(), clean_values=True)
+        if not self.Statuses:
+            self.Statuses = to_enumable("Statuses", "name", "id", self.statuses())
 
-            self.Users = to_enumable("Users", "name", "name",
-                                     self.search_assignable_users_for_issues("", project=self._current_project))
+        if self._current_project:
+            if not self.FixVersions:
+                self.FixVersions = to_enumable("FixVersions", "name", "name",
+                                               self.project_versions(self._current_project))
+            if not self.Users:
+                self.Users = to_enumable("Users", "name", "name",
+                                         self.search_assignable_users_for_issues("", project=self._current_project))
 
     def set_project(self, project: str) -> None:
         self._current_project = project

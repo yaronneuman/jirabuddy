@@ -1,7 +1,7 @@
+import pickle
 import re
 import time
 import traceback
-from typing import Dict
 
 from six import iteritems
 from slackbot import dispatcher
@@ -14,12 +14,34 @@ dispatcher.AT_MESSAGE_MATCHER = re.compile(r'^\<@(\w+)\>:? (.*)$', re.S)
 
 
 class MessageDispatcherWrapper(MessageDispatcher):
-    def __init__(self, slackclient, plugins, errors_channel: str, plugins_cache: [Dict, None], debug: bool = False):
-        super(MessageDispatcherWrapper, self).__init__(slackclient, plugins, errors_channel)
+    def __init__(self,
+                 slack_client,
+                 plugins,
+                 errors_channel: str,
+                 plugins_cache_path: [str, None] = None,
+                 debug: bool = False):
+
+        super(MessageDispatcherWrapper, self).__init__(slack_client, plugins, errors_channel)
         self._registered_keywords: dict = {}
-        self._plugins_cache: dict = plugins_cache or {}
         self.debug: bool = debug
         self.shutdown: bool = False
+        self._plugins_cache = {}
+        self.__plugins_cache_path = plugins_cache_path
+        self._load_plugins_cache()
+
+    def _load_plugins_cache(self):
+        if self.__plugins_cache_path:
+            try:
+                self._plugins_cache = pickle.load(open(self.__plugins_cache_path, "rb"))
+            except Exception:
+                pass
+
+    def _save_plugins_cache(self):
+        if self.__plugins_cache_path:
+            try:
+                pickle.dump(self._plugins_cache, open(self.__plugins_cache_path, "wb"))
+            except Exception:
+                pass
 
     def _get_plugins_help(self, verbose: bool = True) -> str:
         helps = [u"You can ask me one of the following questions:"]
@@ -60,6 +82,7 @@ class MessageDispatcherWrapper(MessageDispatcher):
                     user = [event['user']]
                     self._client.parse_user_data(user)
             time.sleep(1)
+        self._teardown()
 
     def dispatch_msg(self, msg) -> None:
         category = msg[0]
@@ -83,7 +106,7 @@ class MessageDispatcherWrapper(MessageDispatcher):
                     relevant_keywords = {k: v for k, v in self._registered_keywords.items() if
                                          k in func.__code__.co_varnames}
 
-                    plugin_id = func.__code__.__str__()
+                    plugin_id = func.__code__.co_name
                     if plugin_id not in self._plugins_cache:
                         self._plugins_cache[plugin_id] = {}
 
@@ -104,6 +127,9 @@ class MessageDispatcherWrapper(MessageDispatcher):
 
     def register(self, keyword: str, value):
         self._registered_keywords[keyword] = value
+
+    def _teardown(self):
+        self._save_plugins_cache()
 
 
 class MessageWrapper(Message):

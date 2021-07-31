@@ -3,7 +3,6 @@ application:
   description: SlackBot for jira
   version: v0.1.0
 
-
 jira:
   # Contains a certificate authority bundle to verify the server certificate
   ca_bundle: ""
@@ -20,5 +19,15 @@ slack:
   # The slack application token
   token: ""
 
+gitlab:
+  # The gitlab server url
+  server: ""
+  # The gitlab personal token
+  token: ""
+  # The default gitlab project
+  default_project: ""
+
+
 bot:
   plugins_path: ""
+  plugins_cache_path: ""

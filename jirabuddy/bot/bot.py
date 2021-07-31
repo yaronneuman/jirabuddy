@@ -5,14 +5,14 @@ from .message import MessageDispatcherWrapper
 
 
 class SlackBot(Bot):
-    def __init__(self, token: str, debug: bool = False, plugins_cache: dict = None):
+    def __init__(self, token: str, debug: bool = False, plugins_cache_path: str = None):
         slackbot.bot.settings.API_TOKEN = token
         slackbot.bot.settings.PLUGINS = []
         super(SlackBot, self).__init__()
-        self._dispatcher = MessageDispatcherWrapper(slackclient=self._client,
+        self._dispatcher = MessageDispatcherWrapper(slack_client=self._client,
                                                     plugins=self._plugins,
                                                     errors_channel="test-colo",
-                                                    plugins_cache=plugins_cache,
+                                                    plugins_cache_path=plugins_cache_path,
                                                     debug=debug)
         self.register("slack_users", self._client.get_user)
 

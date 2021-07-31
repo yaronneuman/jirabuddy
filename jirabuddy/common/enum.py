@@ -1,7 +1,14 @@
 import json
 import re
+import operator
+
 from collections import OrderedDict
-from typing import Any, Iterable
+from functools import reduce
+from typing import Any, Dict, Tuple, List
+
+
+def get_path_from_dict(dct: dict, path: str, delimiter: str = ".") -> Any:
+    return reduce(operator.getitem, path.split(delimiter), dct)
 
 
 def to_valid_name(s: str):
@@ -55,15 +62,16 @@ def enum(enum_type: str, reverse_mapping: bool = False, nest: bool = False,
     return TypeWrapper(enum_type, (), enums)
 
 
-def to_enumable(name: str, key: str, value: Any, iterable: Iterable, clean_values: bool = False,
+def to_enumable(name: str, key: str, value: Any, iterable: (List, Tuple, Dict, OrderedDict), clean_values: bool = False,
                 reverse_mapping: bool = False, nest: bool = False):
-    iterable = [item.__dict__ if not isinstance(item, (dict, OrderedDict)) else item for item in iterable]
+    iterable_dict = [item.__dict__ if not isinstance(item, (dict, OrderedDict)) else item for item in iterable]
     tuples = []
-    for i in iterable:
-        k = to_valid_name(i.__getitem__(key))
+    for idx, i in enumerate(iterable_dict):
+        k = to_valid_name(get_path_from_dict(i, key))
         if value is None:
-            v = i
+            v = iterable[idx]
         else:
-            v = to_valid_name(i.__getitem__(value)) if clean_values else i.__getitem__(value)
+            v = get_path_from_dict(i, value)
+            v = to_valid_name(v) if clean_values else v
         tuples.append((k, v))
     return enum(name, reverse_mapping=reverse_mapping, nest=nest, **dict(tuples))

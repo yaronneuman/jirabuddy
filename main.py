@@ -4,8 +4,8 @@ import confuse
 
 from jirabuddy.clients import JiraClient
 from jirabuddy.bot import SlackBot
+from jirabuddy.clients import GitLabClient
 from jirabuddy.common import enum
-
 
 APP_NAME = "colo"
 
@@ -18,14 +18,22 @@ def init_slackbot_plugins(config):
 
 def main():
     config = enum("config", nest=True, **confuse.Configuration(APP_NAME).flatten())
+    slackbot = SlackBot(config.slack.token,
+                        debug=bool(int(os.environ.get("DEBUG", 0))),
+                        plugins_cache_path=config.bot.plugins_cache_path)
 
-    jira_client = JiraClient(config.jira.server,
-                             config.jira.username,
-                             config.jira.password,
-                             project=config.jira.default_project)
+    if "jira" in config.names:
+        jira_client = JiraClient(config.jira.server,
+                                 config.jira.username,
+                                 config.jira.password,
+                                 lazy=True,
+                                 default_project=config.jira.default_project)
+        slackbot.register("jira", jira_client)
 
-    slackbot = SlackBot(config.slack.token, debug=bool(int(os.environ.get("DEBUG", 0))))
-    slackbot.register("jira", jira_client)
+    if "gitlab" in config.names:
+        gitlab_client = GitLabClient(config.gitlab.server,
+                                     config.gitlab.token)
+        slackbot.register("gitlab", gitlab_client)
 
     init_slackbot_plugins(config)
     slackbot.run()
