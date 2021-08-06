@@ -1,7 +1,7 @@
 import slackbot
 from slackbot.bot import Bot
 
-from .message import MessageDispatcherWrapper
+from .dispatcher import MessageDispatcherWrapper
 
 
 class SlackBot(Bot):
