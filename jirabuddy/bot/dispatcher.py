@@ -46,9 +46,9 @@ class MessageDispatcherWrapper(MessageDispatcher):
 
     def _get_plugins_help(self, verbose: bool = True) -> str:
         helps = [u"You can ask me one of the following questions:"]
-        for p, v in sorted(iteritems(self._plugins.commands['respond_to']), key=lambda x: x[0].pattern):
-            doc = "\n```%s```\n" % v.__doc__ if verbose and v.__doc__ else ""
-            custom_docs = re.findall(".*?Command: (.*?)(\n|$)", v.__doc__, re.MULTILINE) if v.__doc__ else ""
+        for p, plugin in sorted(iteritems(self._plugins.commands['respond_to']), key=lambda x: x[0].pattern):
+            doc = "\n```%s```\n" % plugin.docs if verbose and plugin.docs else ""
+            custom_docs = re.findall(".*?Command: (.*?)(\n|$)", plugin.docs, re.MULTILINE) if plugin.docs else ""
             pattern = custom_docs[0][0].strip() if custom_docs else p.pattern
             helps += [u' \u2022 {0}{1}'.format("`%s`" % pattern, doc)]
         return '\n'.join(to_utf8(helps))
@@ -100,24 +100,23 @@ class MessageDispatcherWrapper(MessageDispatcher):
             return
 
         responded = False
-        for func, args in self._plugins.get_plugins(category, text):
-            if func:
+        for plugin, args in self._plugins.get_plugins(category, text):
+            if plugin:
                 responded = True
                 try:
-                    relevant_keywords = {k: v for k, v in self._registered_keywords.items() if
-                                         k in func.__code__.co_varnames}
+                    relevant_keywords = {k: v for k, v in self._registered_keywords.items() if k in plugin.args}
 
-                    plugin_id = func.__code__.co_name
+                    plugin_id = plugin.id
                     if plugin_id not in self._plugins_cache:
                         self._plugins_cache[plugin_id] = {}
-                    message_wrapper = MessageWrapper(self._client, msg, func.__name__,
+                    message_wrapper = MessageWrapper(self._client, msg, plugin.name,
                                                      self._plugins_cache.get(plugin_id))
-                    func(message_wrapper, *args, **relevant_keywords)
+                    plugin(message_wrapper, *args, **relevant_keywords)
                 except Shutdown:
                     self.shutdown = True
                 except Exception as ex:
-                    logger.exception('failed to handle message %s with plugin "%s"', text, func.__name__)
-                    reply = '[%s] I have problem when handling "%s"\n' % (func.__name__, text)
+                    logger.exception('failed to handle message %s with plugin "%s"', text, plugin.name)
+                    reply = '[%s] I have problem when handling "%s"\n' % (plugin.name, text)
                     if self.debug:
                         reply += '```\n%s\n```' % traceback.format_exc()
                     else:

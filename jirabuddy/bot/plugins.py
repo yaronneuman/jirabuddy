@@ -1,9 +1,22 @@
 import logging
 import re
+from types import FunctionType
 
 from slackbot.utils import to_utf8
 
 logger = logging.getLogger(__name__)
+
+
+class Plugin(object):
+    def __init__(self, func: FunctionType, name: str = None):
+        self.id = func.__code__.co_name
+        self.name = name or func.__name__
+        self.args = func.__code__.co_varnames
+        self.docs = func.__doc__
+        self.func = func
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
 
 
 class PluginsManager(object):
@@ -30,23 +43,19 @@ class PluginsManager(object):
             yield None, None
 
 
-def respond_to(matchstr, flags=0):
+def respond_to(match_str, flags=0):
     def wrapper(func):
-        PluginsManager.commands['respond_to'][
-            re.compile(matchstr, flags)] = func
-        logger.info('registered respond_to plugin "%s" to "%s"', func.__name__,
-                    matchstr)
+        PluginsManager.commands['respond_to'][re.compile(match_str, flags)] = Plugin(func)
+        logger.info('registered respond_to plugin "%s" to "%s"', func.__name__, match_str)
         return func
 
     return wrapper
 
 
-def listen_to(matchstr, flags=0):
+def listen_to(match_str, flags=0):
     def wrapper(func):
-        PluginsManager.commands['listen_to'][
-            re.compile(matchstr, flags)] = func
-        logger.info('registered listen_to plugin "%s" to "%s"', func.__name__,
-                    matchstr)
+        PluginsManager.commands['listen_to'][re.compile(match_str, flags)] = Plugin(func)
+        logger.info('registered listen_to plugin "%s" to "%s"', func.__name__, match_str)
         return func
 
     return wrapper
@@ -61,17 +70,15 @@ def default_reply(*args, **kwargs):
     with arguments customizing its behavior (e.g. ``@default_reply(matchstr='pattern')``).
     """
     invoked = bool(not args or kwargs)
-    matchstr = kwargs.pop('matchstr', r'^.*$')
+    match_str = kwargs.pop('matchstr', r'^.*$')
     flags = kwargs.pop('flags', 0)
 
     if not invoked:
         func = args[0]
 
     def wrapper(func):
-        PluginsManager.commands['default_reply'][
-            re.compile(matchstr, flags)] = func
-        logger.info('registered default_reply plugin "%s" to "%s"', func.__name__,
-                    matchstr)
+        PluginsManager.commands['default_reply'][re.compile(match_str, flags)] = Plugin(func)
+        logger.info('registered default_reply plugin "%s" to "%s"', func.__name__, match_str)
         return func
 
     return wrapper if invoked else wrapper(func)
