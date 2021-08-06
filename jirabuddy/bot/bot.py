@@ -1,14 +1,21 @@
-import slackbot
-from slackbot.bot import Bot
+import logging
+import time
+
+from six.moves import _thread
+from slackbot.slackclient import SlackClient
 
 from .dispatcher import MessageDispatcherWrapper
+from .plugins import PluginsManager
+
+logger = logging.getLogger(__name__)
+
+TIMEOUT = 100
 
 
-class SlackBot(Bot):
+class SlackBot(object):
     def __init__(self, token: str, debug: bool = False, plugins_cache_path: str = None):
-        slackbot.bot.settings.API_TOKEN = token
-        slackbot.bot.settings.PLUGINS = []
-        super(SlackBot, self).__init__()
+        self._client = SlackClient(token, timeout=TIMEOUT)
+        self._plugins = PluginsManager()
         self._dispatcher = MessageDispatcherWrapper(slack_client=self._client,
                                                     plugins=self._plugins,
                                                     errors_channel="test-colo",
@@ -18,3 +25,18 @@ class SlackBot(Bot):
 
     def register(self, keyword: str, value):
         self._dispatcher.register(keyword, value)
+
+    def run(self):
+        self._dispatcher.start()
+        if not self._client.connected:
+            self._client.rtm_connect()
+
+        _thread.start_new_thread(self._keep_active, tuple())
+        logger.info('connected to slack RTM api')
+        self._dispatcher.loop()
+
+    def _keep_active(self):
+        logger.info('keep active thread started')
+        while True:
+            time.sleep(30 * 60)
+            self._client.ping()

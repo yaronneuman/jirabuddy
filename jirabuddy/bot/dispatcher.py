@@ -8,8 +8,8 @@ from slackbot import dispatcher
 from slackbot.dispatcher import MessageDispatcher, logger
 from slackbot.utils import to_utf8
 
-from jirabuddy.bot import Shutdown
-from jirabuddy.bot.message import MessageWrapper
+from .errors import Shutdown
+from .message import MessageWrapper
 
 dispatcher.AT_MESSAGE_MATCHER = re.compile(r'^\<@(\w+)\>:? (.*)$', re.S)
 

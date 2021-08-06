@@ -1,4 +1,4 @@
-from slackbot.bot import respond_to
+from jirabuddy.bot import respond_to
 
 
 @respond_to("^sup$")
