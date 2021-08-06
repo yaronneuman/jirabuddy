@@ -2,7 +2,7 @@ import logging
 import re
 from abc import ABC, abstractmethod
 from types import FunctionType
-from typing import Tuple, Any, Optional, Match, Union, List
+from typing import Tuple, Any, Optional, Match, Union, List, Generator
 
 from slackbot.utils import to_utf8
 
@@ -18,15 +18,12 @@ class Plugin(ABC):
         self.plugin_type: str = plugin_type
         self.func: FunctionType = func
 
-    def __call__(self, *args, **kwargs):
-        return self.func(*args, **kwargs)
-
     @abstractmethod
     def run(self, *args, **kwargs):
-        self.__call__(*args, **kwargs)
+        pass
 
     @abstractmethod
-    def match(self, arg: Any):
+    def match(self, arg: Any) -> Tuple[bool, Optional[Tuple]]:
         pass
 
 
@@ -39,10 +36,13 @@ class RegexPlugin(Plugin):
         self.matcher: re.Pattern = re.compile(re_pattern, re_flags)
 
     def run(self, *args, **kwargs):
-        self.__call__(*args, **kwargs)
+        self.func(*args, **kwargs)
 
-    def match(self, arg: str) -> Optional[Match[Union[Union[str, bytes], Any]]]:
-        return self.matcher.search(arg)
+    def match(self, arg: str) -> Tuple[bool, Optional[Tuple]]:
+        m = self.matcher.search(arg)
+        if m:
+            return True, tuple(m.groups())
+        return False, None
 
 
 class PluginsManager(object):
@@ -62,15 +62,15 @@ class PluginsManager(object):
     def get_plugins_category(self, category: str) -> List[Plugin]:
         return self._store[category]
 
-    def get_plugins(self, category: str, text: str):
+    def get_plugins(self, category: str, text: str) -> Generator[Tuple[Plugin, List[str]], None, None]:
         has_matching_plugin = False
         if text is None:
             text = ''
         for plugin in self.get_plugins_category(category=category):
-            m = plugin.match(text)
-            if m:
+            match, args = plugin.match(text)
+            if match:
                 has_matching_plugin = True
-                yield plugin, to_utf8(m.groups())
+                yield plugin, to_utf8(args)
 
         if not has_matching_plugin:
             yield None, None

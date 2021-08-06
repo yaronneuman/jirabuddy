@@ -16,7 +16,7 @@ from .plugins import PluginsManager, RegexPlugin
 dispatcher.AT_MESSAGE_MATCHER = re.compile(r'^\<@(\w+)\>:? (.*)$', re.S)
 
 
-class MessageDispatcherWrapper(MessageDispatcher):
+class Dispatcher(MessageDispatcher):
     def __init__(self,
                  slack_client: SlackClient,
                  plugins: PluginsManager,
@@ -24,7 +24,7 @@ class MessageDispatcherWrapper(MessageDispatcher):
                  plugins_cache_path: [str, None] = None,
                  debug: bool = False):
 
-        super(MessageDispatcherWrapper, self).__init__(slack_client, plugins, errors_channel)
+        super(Dispatcher, self).__init__(slack_client, plugins, errors_channel)
         self._plugins: PluginsManager = self._plugins
         self._registered_keywords: dict = {}
         self.debug: bool = debug
@@ -114,7 +114,7 @@ class MessageDispatcherWrapper(MessageDispatcher):
                         self._plugins_cache[plugin_id] = {}
                     message_wrapper = MessageWrapper(self._client, msg, plugin.name,
                                                      self._plugins_cache.get(plugin_id))
-                    plugin(message_wrapper, *args, **relevant_keywords)
+                    plugin.run(message_wrapper, *args, **relevant_keywords)
                 except Shutdown:
                     self.shutdown = True
                 except Exception as ex:

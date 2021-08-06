@@ -4,7 +4,7 @@ import time
 from six.moves import _thread
 from slackbot.slackclient import SlackClient
 
-from .dispatcher import MessageDispatcherWrapper
+from .dispatcher import Dispatcher
 from .plugins import PluginsManager
 
 logger = logging.getLogger(__name__)
@@ -16,11 +16,11 @@ class SlackBot(object):
     def __init__(self, token: str, debug: bool = False, plugins_cache_path: str = None):
         self._client = SlackClient(token, timeout=TIMEOUT)
         self._plugins = PluginsManager()
-        self._dispatcher = MessageDispatcherWrapper(slack_client=self._client,
-                                                    plugins=self._plugins,
-                                                    errors_channel="test-colo",
-                                                    plugins_cache_path=plugins_cache_path,
-                                                    debug=debug)
+        self._dispatcher = Dispatcher(slack_client=self._client,
+                                      plugins=self._plugins,
+                                      errors_channel="test-colo",
+                                      plugins_cache_path=plugins_cache_path,
+                                      debug=debug)
         self.register("slack_users", self._client.get_user)
 
     def register(self, keyword: str, value):
