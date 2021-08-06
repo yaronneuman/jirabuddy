@@ -3,7 +3,6 @@ import re
 import time
 import traceback
 
-from six import iteritems
 from slackbot import dispatcher
 from slackbot.dispatcher import MessageDispatcher, logger
 from slackbot.utils import to_utf8
@@ -46,10 +45,10 @@ class MessageDispatcherWrapper(MessageDispatcher):
 
     def _get_plugins_help(self, verbose: bool = True) -> str:
         helps = [u"You can ask me one of the following questions:"]
-        for p, plugin in sorted(iteritems(self._plugins.commands['respond_to']), key=lambda x: x[0].pattern):
+        for plugin in sorted(self._plugins.commands['respond_to'], key=lambda p: p.re_pattern):
             doc = "\n```%s```\n" % plugin.docs if verbose and plugin.docs else ""
             custom_docs = re.findall(".*?Command: (.*?)(\n|$)", plugin.docs, re.MULTILINE) if plugin.docs else ""
-            pattern = custom_docs[0][0].strip() if custom_docs else p.pattern
+            pattern = custom_docs[0][0].strip() if custom_docs else plugin.re_pattern
             helps += [u' \u2022 {0}{1}'.format("`%s`" % pattern, doc)]
         return '\n'.join(to_utf8(helps))
 
