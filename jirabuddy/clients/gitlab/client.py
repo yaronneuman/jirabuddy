@@ -10,6 +10,7 @@ class GitLabClientWrapper(object):
 
         self._projects = None
         self._users = None
+        self._usernames = None
         self._project: [gitlab.v4.objects.projects.Project, None] = None
         self._merge_requests = None
 
@@ -28,11 +29,30 @@ class GitLabClientWrapper(object):
     @property
     def users(self):
         if not self._users:
+            users_data = self._client.users.list(all=True)
             self._users = to_enumable(name="gitlabUsers",
                                       key="_attrs.name",
                                       value=None,
-                                      iterable=self._client.users.list(all=True))
+                                      iterable=users_data)
+            self._usernames = to_enumable(name="gitlabUsers",
+                                          key="_attrs.username",
+                                          value=None,
+                                          iterable=users_data)
         return self._users
+
+    @property
+    def usernames(self):
+        if not self._usernames:
+            users_data = self._client.users.list(all=True)
+            self._usernames = to_enumable(name="gitlabUsers",
+                                          key="_attrs.username",
+                                          value=None,
+                                          iterable=users_data)
+            self._users = to_enumable(name="gitlabUsers",
+                                      key="_attrs.name",
+                                      value=None,
+                                      iterable=users_data)
+        return self._usernames
 
     @property
     def project(self) -> gitlab.v4.objects.projects.Project:

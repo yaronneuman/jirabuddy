@@ -109,8 +109,8 @@ class MessageDispatcherWrapper(MessageDispatcher):
                     plugin_id = func.__code__.co_name
                     if plugin_id not in self._plugins_cache:
                         self._plugins_cache[plugin_id] = {}
-
-                    func(MessageWrapper(self._client, msg, func.__name__, self._plugins_cache.get(plugin_id)), *args, **relevant_keywords)
+                    message_wrapper = MessageWrapper(self._client, msg, func.__name__, self._plugins_cache.get(plugin_id))
+                    func(message_wrapper, *args, **relevant_keywords)
                 except Shutdown:
                     self.shutdown = True
                 except Exception as ex:
