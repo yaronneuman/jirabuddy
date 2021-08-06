@@ -2,26 +2,30 @@ import pickle
 import re
 import time
 import traceback
+from typing import cast
 
 from slackbot import dispatcher
 from slackbot.dispatcher import MessageDispatcher, logger
+from slackbot.slackclient import SlackClient
 from slackbot.utils import to_utf8
 
 from .errors import Shutdown
 from .message import MessageWrapper
+from .plugins import PluginsManager, RegexPlugin
 
 dispatcher.AT_MESSAGE_MATCHER = re.compile(r'^\<@(\w+)\>:? (.*)$', re.S)
 
 
 class MessageDispatcherWrapper(MessageDispatcher):
     def __init__(self,
-                 slack_client,
-                 plugins,
+                 slack_client: SlackClient,
+                 plugins: PluginsManager,
                  errors_channel: str,
                  plugins_cache_path: [str, None] = None,
                  debug: bool = False):
 
         super(MessageDispatcherWrapper, self).__init__(slack_client, plugins, errors_channel)
+        self._plugins: PluginsManager = self._plugins
         self._registered_keywords: dict = {}
         self.debug: bool = debug
         self.shutdown: bool = False
@@ -45,10 +49,10 @@ class MessageDispatcherWrapper(MessageDispatcher):
 
     def _get_plugins_help(self, verbose: bool = True) -> str:
         helps = [u"You can ask me one of the following questions:"]
-        for plugin in sorted(self._plugins.commands['respond_to'], key=lambda p: p.re_pattern):
+        for plugin in sorted(self._plugins.get_plugins_category("respond_to"), key=lambda p: p.re_pattern):
             doc = "\n```%s```\n" % plugin.docs if verbose and plugin.docs else ""
             custom_docs = re.findall(".*?Command: (.*?)(\n|$)", plugin.docs, re.MULTILINE) if plugin.docs else ""
-            pattern = custom_docs[0][0].strip() if custom_docs else plugin.re_pattern
+            pattern = custom_docs[0][0].strip() if custom_docs else cast(RegexPlugin, plugin).re_pattern
             helps += [u' \u2022 {0}{1}'.format("`%s`" % pattern, doc)]
         return '\n'.join(to_utf8(helps))
 

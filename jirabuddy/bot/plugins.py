@@ -2,7 +2,7 @@ import logging
 import re
 from abc import ABC, abstractmethod
 from types import FunctionType
-from typing import Tuple, Any, Optional, Match, Union
+from typing import Tuple, Any, Optional, Match, Union, List
 
 from slackbot.utils import to_utf8
 
@@ -49,7 +49,7 @@ class PluginsManager(object):
     def __init__(self):
         pass
 
-    commands = {
+    _store = {
         'respond_to': [],
         'listen_to': [],
         'default_reply': []
@@ -57,13 +57,16 @@ class PluginsManager(object):
 
     @classmethod
     def add_plugin(cls, plugin: Plugin):
-        cls.commands[plugin.plugin_type].append(plugin)
+        cls._store[plugin.plugin_type].append(plugin)
 
-    def get_plugins(self, category, text):
+    def get_plugins_category(self, category: str) -> List[Plugin]:
+        return self._store[category]
+
+    def get_plugins(self, category: str, text: str):
         has_matching_plugin = False
         if text is None:
             text = ''
-        for plugin in self.commands[category]:
+        for plugin in self.get_plugins_category(category=category):
             m = plugin.match(text)
             if m:
                 has_matching_plugin = True
@@ -75,7 +78,7 @@ class PluginsManager(object):
 
 def respond_to(match_str, flags=0):
     def wrapper(func):
-        PluginsManager.commands['respond_to'].append(RegexPlugin(func, match_str, re_flags=flags))
+        PluginsManager.add_plugin(RegexPlugin(func, match_str, re_flags=flags, plugin_type="respond_to"))
         logger.info('registered respond_to plugin "%s" to "%s"', func.__name__, match_str)
         return func
 
@@ -84,7 +87,7 @@ def respond_to(match_str, flags=0):
 
 def listen_to(match_str, flags=0):
     def wrapper(func):
-        PluginsManager.commands['listen_to'].append(RegexPlugin(func, match_str, re_flags=flags))
+        PluginsManager.add_plugin(RegexPlugin(func, match_str, re_flags=flags, plugin_type="listen_to"))
         logger.info('registered listen_to plugin "%s" to "%s"', func.__name__, match_str)
         return func
 
@@ -107,7 +110,7 @@ def default_reply(*args, **kwargs):
         func = args[0]
 
     def wrapper(func):
-        PluginsManager.commands['default_reply'].append(RegexPlugin(func, match_str, re_flags=flags))
+        PluginsManager.add_plugin(RegexPlugin(func, match_str, re_flags=flags, plugin_type="default_reply"))
         logger.info('registered default_reply plugin "%s" to "%s"', func.__name__, match_str)
         return func
 
