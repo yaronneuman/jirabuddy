@@ -11,7 +11,8 @@ from slackbot.utils import to_utf8
 
 from .errors import Shutdown
 from .message import MessageWrapper
-from .plugins import PluginsManager, RegexPlugin
+from .plugins import RegexPlugin
+from .plugins_manager import PluginsManager
 
 dispatcher.AT_MESSAGE_MATCHER = re.compile(r'^\<@(\w+)\>:? (.*)$', re.S)
 
@@ -25,7 +26,7 @@ class Dispatcher(MessageDispatcher):
                  debug: bool = False):
 
         super(Dispatcher, self).__init__(slack_client, plugins, errors_channel)
-        self._plugins_manger: PluginsManager = self._plugins
+        self._plugins_manager: PluginsManager = self._plugins
         self._registered_keywords: dict = {}
         self.debug: bool = debug
         self.shutdown: bool = False
@@ -35,7 +36,7 @@ class Dispatcher(MessageDispatcher):
 
     def _get_plugins_help(self, verbose: bool = True) -> str:
         helps = [u"You can ask me one of the following questions:"]
-        for plugin in sorted(self._plugins_manger.get_plugins_category("respond_to"), key=lambda p: p.re_pattern):
+        for plugin in sorted(self._plugins_manager.get_plugins_category("respond_to"), key=lambda p: p.re_pattern):
             doc = "\n```%s```\n" % plugin.docs if verbose and plugin.docs else ""
             custom_docs = re.findall(".*?Command: (.*?)(\n|$)", plugin.docs, re.MULTILINE) if plugin.docs else ""
             pattern = custom_docs[0][0].strip() if custom_docs else cast(RegexPlugin, plugin).re_pattern
@@ -85,7 +86,7 @@ class Dispatcher(MessageDispatcher):
             return
 
         responded = False
-        for plugin, args in self._plugins_manger.get_plugins(category, text):
+        for plugin, args in self._plugins_manager.get_plugins(category, text):
             if plugin:
                 responded = True
                 try:
@@ -127,7 +128,7 @@ class Dispatcher(MessageDispatcher):
 
     def _handle_periodical_plugins(self):
         epoch_sec = int(time.time())
-        for plugin, args in self._plugins_manger.get_plugins("periodic", epoch_sec):
+        for plugin, args in self._plugins_manager.get_plugins("periodic", epoch_sec):
             if plugin:
                 try:
                     relevant_keywords = {k: v for k, v in self._registered_keywords.items() if k in plugin.args}

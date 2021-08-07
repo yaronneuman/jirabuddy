@@ -30,7 +30,7 @@ def main():
                                  default_project=config.jira.default_project)
         slackbot.register("jira", jira_client)
 
-    if "gitlab" in config.names:
+    if "gitlab" in config.names and config.gitlab.server:
         gitlab_client = GitLabClient(config.gitlab.server,
                                      config.gitlab.token)
         slackbot.register("gitlab", gitlab_client)

@@ -5,7 +5,7 @@ from six.moves import _thread
 from slackbot.slackclient import SlackClient
 
 from .dispatcher import Dispatcher
-from .plugins import PluginsManager
+from .plugins_manager import PluginsManager
 
 logger = logging.getLogger(__name__)
 
