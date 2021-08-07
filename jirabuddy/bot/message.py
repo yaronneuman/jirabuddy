@@ -2,9 +2,8 @@ from slackbot.dispatcher import Message
 
 
 class MessageWrapper(Message):
-    def __init__(self, slack_client, body, plugin_name: str, plugin_cache: dict):
+    def __init__(self, slack_client, body, plugin_cache: dict):
         super(MessageWrapper, self).__init__(slack_client, body)
-        self._plugin_name = plugin_name
         self._plugin_cache = plugin_cache
 
     @property

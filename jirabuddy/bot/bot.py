@@ -22,6 +22,7 @@ class SlackBot(object):
                                       plugins_cache_path=plugins_cache_path,
                                       debug=debug)
         self.register("slack_users", self._client.get_user)
+        self.register("slack_message", self._client.send_message)
 
     def register(self, keyword: str, value):
         self._dispatcher.register(keyword, value)

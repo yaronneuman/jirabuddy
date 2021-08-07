@@ -1,4 +1,6 @@
-from jirabuddy.bot import respond_to
+from datetime import timedelta
+
+from jirabuddy.bot import respond_to, every
 
 
 @respond_to("^sup$")
@@ -36,3 +38,12 @@ def remember(msg, what_to_remember):
     stored_dict["what_to_remember"] = what_to_remember
     stored_dict["when"] = datetime.utcnow()
     msg.store(stored_dict)  # update plugin cache with dict values
+
+
+@every(timedelta(minutes=10))
+def nag(slack_message):
+    """
+    will be running every 10 minutes
+    :param slack_message: optional magic param to get slack client message dispatcher
+    """
+    slack_message("@yneuman", "ping")

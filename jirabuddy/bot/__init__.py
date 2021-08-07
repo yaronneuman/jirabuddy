@@ -1,3 +1,3 @@
 from .bot import SlackBot
 from .errors import Shutdown
-from .plugins import respond_to, listen_to
+from .plugins import respond_to, listen_to, every, Plugin

@@ -13,7 +13,7 @@ class Ticket(Issue):
         self.find(key, params=kwargs)
         self.client = client
         self.key = self.raw['key']
-        self.link = f"https://{self.client.server}/browse/{self.key}"
+        self.link = f"{self.client.server}/browse/{self.key}"
 
     def comment(self, message: str) -> None:
         self.client.add_comment(self.key, message)
