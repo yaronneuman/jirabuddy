@@ -15,11 +15,10 @@ TIMEOUT = 100
 class SlackBot(object):
     def __init__(self, token: str, debug: bool = False, plugins_cache_path: str = None):
         self._client = SlackClient(token, timeout=TIMEOUT)
-        self._plugins = PluginsManager()
+        self._plugins = PluginsManager(plugins_cache_path=plugins_cache_path)
         self._dispatcher = Dispatcher(slack_client=self._client,
                                       plugins=self._plugins,
                                       errors_channel="test-colo",
-                                      plugins_cache_path=plugins_cache_path,
                                       debug=debug)
         self.register("slack_users", self._client.get_user)
         self.register("slack_message", self._client.send_message)

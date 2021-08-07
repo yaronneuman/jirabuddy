@@ -13,7 +13,7 @@ class Plugin(ABC):
         self._docs: str = func.__doc__
         self._plugin_type: str = plugin_type
         self._func: FunctionType = func
-        self._plugin_cache = {}
+        self.cache = {}
         self.suspend: bool = suspend
 
     @property
@@ -49,12 +49,12 @@ class Plugin(ABC):
             self.func(*args, **kwargs)
 
     def store(self, store_dict: dict):
-        self._plugin_cache.update(**store_dict)
+        self.cache.update(**store_dict)
 
     def restore(self, key: [str, None] = None):
         if key is None:
-            return self._plugin_cache.copy()
-        return self._plugin_cache.get(key, None)
+            return self.cache.copy()
+        return self.cache.get(key, None)
 
 
 class RegexPlugin(Plugin):

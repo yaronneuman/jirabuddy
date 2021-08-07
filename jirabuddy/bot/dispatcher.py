@@ -22,7 +22,6 @@ class Dispatcher(MessageDispatcher):
                  slack_client: SlackClient,
                  plugins: PluginsManager,
                  errors_channel: str,
-                 plugins_cache_path: [str, None] = None,
                  debug: bool = False):
 
         super(Dispatcher, self).__init__(slack_client, plugins, errors_channel)
@@ -30,9 +29,6 @@ class Dispatcher(MessageDispatcher):
         self._registered_keywords: dict = {}
         self.debug: bool = debug
         self.shutdown: bool = False
-        self._plugins_cache = {}
-        self.__plugins_cache_path = plugins_cache_path
-        self._load_plugins_cache()
 
     def _get_plugins_help(self, verbose: bool = True) -> str:
         helps = [u"You can ask me one of the following questions:"]
@@ -57,20 +53,6 @@ class Dispatcher(MessageDispatcher):
     def _default_reply(self, msg) -> None:
         self._client.rtm_send_message(msg['channel'], self._get_default_answer(msg))
 
-    def _load_plugins_cache(self):
-        if self.__plugins_cache_path:
-            try:
-                self._plugins_cache = pickle.load(open(self.__plugins_cache_path, "rb"))
-            except Exception:
-                pass
-
-    def _save_plugins_cache(self):
-        if self.__plugins_cache_path:
-            try:
-                pickle.dump(self._plugins_cache, open(self.__plugins_cache_path, "wb"))
-            except Exception:
-                pass
-
     def dispatch_msg(self, msg) -> None:
         category = msg[0]
         msg = msg[1]
@@ -91,9 +73,7 @@ class Dispatcher(MessageDispatcher):
                 responded = True
                 try:
                     relevant_keywords = {k: v for k, v in self._registered_keywords.items() if k in plugin.args}
-                    if plugin.id not in self._plugins_cache:
-                        self._plugins_cache[plugin.id] = {}
-                    message_wrapper = MessageWrapper(self._client, msg, self._plugins_cache.get(plugin.id))
+                    message_wrapper = MessageWrapper(self._client, msg, plugin.cache)
                     plugin.run(message_wrapper, *args, **relevant_keywords)
                 except Shutdown:
                     self.shutdown = True
@@ -132,9 +112,6 @@ class Dispatcher(MessageDispatcher):
             if plugin:
                 try:
                     relevant_keywords = {k: v for k, v in self._registered_keywords.items() if k in plugin.args}
-                    if plugin.id not in self._plugins_cache:
-                        self._plugins_cache[plugin.id] = {}
-                    plugin._plugin_cache = self._plugins_cache.get(plugin.id)
                     plugin.run(plugin, *args, **relevant_keywords)
                 except Exception as ex:
                     logger.exception('failed to handle plugin "%s"', plugin.name)
@@ -156,4 +133,4 @@ class Dispatcher(MessageDispatcher):
         self._registered_keywords[keyword] = value
 
     def _teardown(self):
-        self._save_plugins_cache()
+        self._plugins_manager.teardown()
