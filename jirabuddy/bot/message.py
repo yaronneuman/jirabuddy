@@ -2,9 +2,8 @@ from slackbot.dispatcher import Message
 
 
 class MessageWrapper(Message):
-    def __init__(self, slack_client, body, plugin_cache: dict):
+    def __init__(self, slack_client, body):
         super(MessageWrapper, self).__init__(slack_client, body)
-        self._plugin_cache = plugin_cache
 
     @property
     def sender(self):
@@ -22,10 +21,3 @@ class MessageWrapper(Message):
         else:
             self.send(text)
 
-    def store(self, store_dict: dict):
-        self._plugin_cache.update(**store_dict)
-
-    def restore(self, key: [str, None] = None):
-        if key is None:
-            return self._plugin_cache.copy()
-        return self._plugin_cache.get(key, None)

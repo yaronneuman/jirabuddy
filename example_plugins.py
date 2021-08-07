@@ -1,15 +1,15 @@
 from datetime import timedelta
 
-from jirabuddy.bot import respond_to, every
+from jirabuddy.bot import respond_to, every, PeriodicPlugin, RegexPlugin
 
 
 @respond_to("^sup$")
-def view_ticket(msg):
+def view_ticket(_, msg):
     msg.reply("SUP ;/")
 
 
 @respond_to("(^[0-9 ]*)\+([0-9 ]*)")
-def plus(msg, first: str, second: str):
+def plus(_, msg, first: str, second: str):
     """Calculate a simple Plus equation"""
     if first.isdigit() and second.isdigit():
         result = int(first) + int(second)
@@ -19,31 +19,31 @@ def plus(msg, first: str, second: str):
 
 
 @respond_to("Nice to meet you, I'm (.*)$")
-def self_intro(msg, who):
+def self_intro(_, msg, who):
     """Say hi to the bot"""
     msg.reply(f"Hey {who}, it's a pleasure to meet you. I'm Colo, at your service!")
 
 
 @respond_to("remember (.*)")
-def remember(msg, what_to_remember):
+def remember(plugin: RegexPlugin, msg, what_to_remember):
     from datetime import datetime
     msg.reply("I will do my best to remember that!")
 
-    remembered = msg.restore("what_to_remember")  # get specific value from plugin cache, or None if not cached
-    when = msg.restore("when")
+    remembered = plugin.restore("what_to_remember")  # get specific value from plugin cache, or None if not cached
+    when = plugin.restore("when")
     if remembered and when:
         msg.reply(f'last time, at {when}, you told me to remember: {remembered}')
 
-    stored_dict = msg.restore()  # get all values from plugin cache as a new dict
+    stored_dict = plugin.restore()  # get all values from plugin cache as a new dict
     stored_dict["what_to_remember"] = what_to_remember
     stored_dict["when"] = datetime.utcnow()
-    msg.store(stored_dict)  # update plugin cache with dict values
+    plugin.store(stored_dict)  # update plugin cache with dict values
 
 
 @every(timedelta(minutes=10))
-def nag(slack_message):
+def nag(plugin: PeriodicPlugin, slack_message):
     """
     will be running every 10 minutes
-    :param slack_message: optional magic param to get slack client message dispatcher
+    slack_message: optional magic param to get slack client message dispatcher
     """
-    slack_message("@yneuman", "ping")
+    slack_message("@yneuman", "I will ping you every %s seconds" % plugin.frequency.total_seconds())

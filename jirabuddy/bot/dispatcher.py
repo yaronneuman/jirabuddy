@@ -73,8 +73,7 @@ class Dispatcher(MessageDispatcher):
                 responded = True
                 try:
                     relevant_keywords = {k: v for k, v in self._registered_keywords.items() if k in plugin.args}
-                    message_wrapper = MessageWrapper(self._client, msg, plugin.cache)
-                    plugin.run(message_wrapper, *args, **relevant_keywords)
+                    plugin.run(plugin, MessageWrapper(self._client, msg), *args, **relevant_keywords)
                 except Shutdown:
                     self.shutdown = True
                 except Exception as ex:
