@@ -45,7 +45,7 @@ def enum(enum_type: str, reverse_mapping: bool = False, nest: bool = False,
          *sequential, **named):
     enums = dict(zip(sequential, range(len(sequential))), **named)
 
-    enums["__orig"] = json.dumps(enums)
+    enums["__orig"] = json.dumps(enums, default=str)
 
     if clean_variables:
         enums = {to_valid_name(k): v for k, v in enums.items()}

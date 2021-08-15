@@ -62,8 +62,7 @@ class FreeTextParser(object):
                     results[key] = self._store[key](value)
                 except Exception:
                     results[key] = value
-                finally:
-                    continue
+                continue
 
             phrase_not_found = True
             for p in self.priorities:
