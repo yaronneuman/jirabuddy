@@ -1,4 +1,5 @@
 import random
+from typing import List, Optional, Union
 
 import jira
 import logging
@@ -27,7 +28,7 @@ class JiraClient(jira.client.JIRA):
         self._current_ticket: [Ticket, None] = None
         self.TicketTypes = None
         self.Priorities = None
-        self.Users = None
+        self.Components = None
         self.Projects = None
         self.FixVersions = None
         self.FieldsByKey = None
@@ -53,12 +54,12 @@ class JiraClient(jira.client.JIRA):
             self.Statuses = to_enumable("Statuses", "name", "id", self.statuses())
 
         if self._current_project:
+            if not self.Components:
+                self.Components = to_enumable("Components", "name", "id",
+                                              self.project_components(self._current_project))
             if not self.FixVersions:
                 self.FixVersions = to_enumable("FixVersions", "name", "name",
                                                self.project_versions(self._current_project))
-            if not self.Users:
-                self.Users = to_enumable("Users", "name", "name",
-                                         self.search_assignable_users_for_issues("", project=self._current_project))
 
     def set_project(self, project: str) -> None:
         self._current_project = project
@@ -88,9 +89,18 @@ class JiraClient(jira.client.JIRA):
     def comment(self, message: str, ticket_key: str = None) -> None:
         self.get_ticket(key=ticket_key).comment(message)
 
-    def create_ticket(self, ticket_type, summary, priority, description: str = "",
-                      project: str = None, assignee: str = None, fix_versions: str = None,
+    def create_ticket(self,
+                      summary: str,
+                      ticket_type: str = "Task",
+                      description: str = "",
+                      project: str = None,
+                      assignee: str = None,
+                      reporter: str = None,
+                      priority: str = None,
+                      components: Optional[Union[List[str], str]] = None,
+                      fix_versions: Optional[Union[List[str], str]] = None,
                       **kwargs) -> Ticket:
+
         fields_kwargs = dict(summary=summary,
                              project={'key': project or self._current_project},
                              issuetype={'name': ticket_type},
@@ -98,8 +108,22 @@ class JiraClient(jira.client.JIRA):
         if assignee:
             fields_kwargs["assignee"] = {'name': assignee} or None
 
-        fields_kwargs["fixVersions"] = [{"name": fv} for fv in fix_versions] if fix_versions else None
-        fields_kwargs["priority"] = {'name': priority}
+        if reporter:
+            fields_kwargs["reporter"] = {'name': reporter} or None
+
+        if priority:
+            fields_kwargs["priority"] = {'name': priority}
+
+        if fix_versions:
+            if not isinstance(fix_versions, list):
+                fix_versions = [self.FixVersions.get(fv) for fv in fix_versions]
+            fields_kwargs["fixVersions"] = [{"name": fv} for fv in fix_versions]
+
+        if components:
+            if not isinstance(components, list):
+                components = [self.Components.get(cm) for cm in components.split(",")]
+            fields_kwargs["components"] = [{"id": cm} for cm in components]
+
         fields_kwargs.update(kwargs)
         issue = self.create_issue(**fields_kwargs)
         return self.get_ticket(issue.key)

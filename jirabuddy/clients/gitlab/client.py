@@ -63,8 +63,8 @@ class GitLabClientWrapper(object):
     @project.setter
     def project(self, project: [str, gitlab.v4.objects.projects.Project]):
         if isinstance(project, str):
-            if project in self.projects.names:
+            if project in self.projects.enum_names:
                 project: gitlab.v4.objects.projects.Project = self.projects[project]
             else:
-                raise RuntimeError("unknown project %s. known projects: %s", project, self.projects.names)
+                raise RuntimeError("unknown project %s. known projects: %s", project, self.projects.enum_names)
         self._project = project

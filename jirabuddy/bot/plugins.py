@@ -73,7 +73,7 @@ class RegexPlugin(Plugin):
         self.matcher: re.Pattern = re.compile(re_pattern, re_flags)
 
     def match(self, arg: str) -> Tuple[bool, Optional[Tuple]]:
-        m = self.matcher.search(arg)
+        m = self.matcher.match(arg)
         if m:
             return True, tuple(m.groups())
         return False, None
