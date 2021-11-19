@@ -1,11 +1,9 @@
 import os
 
-import confuse
-
 from jirabuddy.clients import JiraClient
 from jirabuddy.bot import SlackBot
 from jirabuddy.clients import GitLabClient
-from jirabuddy.common import enum, FreeTextParser
+from jirabuddy.common import enum, FreeTextParser, Configuration
 
 APP_NAME = "colo"
 
@@ -17,7 +15,7 @@ def init_slackbot_plugins(config):
 
 
 def main():
-    config = enum("config", nest=True, **confuse.Configuration(APP_NAME).flatten())
+    config = enum("config", nest=True, **Configuration(APP_NAME).parse())
     ftxtp = FreeTextParser()
     ftxtp.ignore("on", "for", "to", "in")
 
