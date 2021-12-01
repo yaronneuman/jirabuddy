@@ -10,7 +10,6 @@ class Configuration(ConfSuper):
 
     def _recursive_parse(self, node: OrderedDict, dynasty: list = None):
         dynasty = dynasty or []
-        import pdb; pdb.set_trace()
         for key, value in node.copy().items():
             if isinstance(value, OrderedDict):
                 node[key] = self._recursive_parse(value, dynasty + [key])
