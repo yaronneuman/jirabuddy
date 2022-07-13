@@ -1,0 +1,4 @@
+#development files
+deployment
+!deployment/ca-bundle.pem
+!deployment/config-vanila.yaml

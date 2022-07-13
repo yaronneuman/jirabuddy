@@ -14,7 +14,8 @@ class Configuration(ConfSuper):
             if isinstance(value, OrderedDict):
                 node[key] = self._recursive_parse(value, dynasty + [key])
             else:
-                node[key] = os.environ.get(("_".join(dynasty + [key]).upper()), value)
+                env_key = "_".join(dynasty + [key]).upper()
+                node[key] = os.environ.get(env_key, value)
         return node
 
     def parse(self):

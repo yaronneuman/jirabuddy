@@ -1,8 +1,9 @@
+import logging
 import os
 
-from jirabuddy.clients import JiraClient
 from jirabuddy.bot import SlackBot
 from jirabuddy.clients import GitLabClient
+from jirabuddy.clients import JiraClient
 from jirabuddy.common import enum, FreeTextParser, Configuration
 
 APP_NAME = "colo"
@@ -44,7 +45,7 @@ def main():
     slackbot.register("text_parser", ftxtp)
 
     init_slackbot_plugins(config)
-    print("Starting!")
+    logging.info("Starting!")
     slackbot.run()
 
 
